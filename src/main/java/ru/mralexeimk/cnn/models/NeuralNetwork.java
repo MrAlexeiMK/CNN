@@ -4,6 +4,7 @@ import lombok.Data;
 import ru.mralexeimk.cnn.layers.*;
 import ru.mralexeimk.cnn.other.ActivationFunType;
 import ru.mralexeimk.cnn.other.Direction;
+import ru.mralexeimk.cnn.other.ExtractedData;
 import ru.mralexeimk.cnn.other.PullingType;
 
 import java.io.*;
@@ -235,13 +236,19 @@ public class NeuralNetwork implements Serializable {
                                 double o = O.get(x, y, z);
                                 double e = errors.get(x, y, z);
                                 Matrix Ik = I.get(index).getSubMatrix(x, y, width, height);
-                                Matrix Ek = nextErrors.get(index).getSubMatrix(x, y, width, height);
-                                Matrix difE = Ik.getTranspose().multiply(e);
-                                nextErrors.get(index).replace(x, y, Ek.sum(difE));
+                                Matrix difE = nextErrors.get(index).getSubMatrix(x, y, width, height).sum(e);
+                                nextErrors.get(index).replace(x, y, difE);
 
                                 Matrix dif = Ik.multiply(e*o*(1-o)*learningRate);
                                 biasError += dif.getSum();
                                 pl.getW().get(z).sum(dif);
+                            }
+                        }
+                        for(int y = 0; y < I.getM(); ++y) {
+                            for(int x = 0; x < I.getN(); ++x) {
+                                int w = Math.min(x+1, width);
+                                int h = Math.min(y+1, height);
+                                nextErrors.get(index).set(x, y, nextErrors.get(index).get(x, y)/(w*h));
                             }
                         }
                         biasError /= O.getN()*O.getM();
@@ -288,71 +295,28 @@ public class NeuralNetwork implements Serializable {
         load(defId, defLayers, defLearningRate);
     }
 
-    public void trainFromFile(String path, int inputX, int inputY, int inputZ, int epoch) {
-        System.out.println("Starting training...");
-        try {
-            File file = new File(getClass().getResource(path).toURI());
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            int size = 0;
-            while(reader.readLine() != null) ++size;
-            reader.close();
-            size *= epoch;
-            String line;
-            int j = 0;
-            for (int i = 0; i < epoch; ++i) {
-                Scanner sc = new Scanner(file);
-                while (sc.hasNextLine()) {
-                    line = sc.nextLine();
-                    String[] spl = line.split(",");
-                    int target = Integer.parseInt(spl[0]);
-                    List<Double> listInputs = new ArrayList<>();
-                    for (int k = 1; k < spl.length; ++k) {
-                        double t = Double.parseDouble(spl[k]);
-                        t = (t / 255.0) * 0.99 + 0.01;
-                        listInputs.add(t);
-                    }
-                    Matrix3D inputs = new Matrix3D(inputX, inputY, inputZ, listInputs);
-                    Matrix targets = new Matrix(1, getOutputLayer().getUnits(), 0.01);
-                    targets.set(0, target, 0.99);
-                    train(inputs, targets);
-                    ++j;
-                    System.out.println(String.format("%.3f", 100*(double)j/size) + "%");
-                }
-                sc.close();
+    public void train(ExtractedData data, int epochs, boolean debug) {
+        if(debug) System.out.println("Starting training...");
+        int size = data.getLen()*epochs;
+        for(int i = 0; i < epochs; ++i) {
+            for(int j = 0; j < data.getLen(); ++j) {
+                train(data.getInputs().get(j), data.getOutputs().get(j));
+                if(debug) System.out.println(String.format("%.3f", 100*(double)(i*data.getLen()+j)/size) + "%");
             }
-        } catch(Exception e){
-            e.printStackTrace();
         }
     }
 
-    public void testFromFile(String path, int inputX, int inputY, int inputZ) {
-        try {
-            File file = new File(getClass().getResource(path).toURI());
-            Scanner sc = new Scanner(file);
-            String line;
-            int count = 0;
-            int count_correct = 0;
-            while(sc.hasNextLine()) {
-                line = sc.nextLine();
-                ++count;
-                String[] spl = line.split(",");
-                int correct = Integer.parseInt(spl[0]);
-                List<Double> listInputs = new ArrayList<>();
-                for(int i = 1; i < spl.length; ++i) {
-                    double t = Double.parseDouble(spl[i]);
-                    t = (t/255.0)*0.99 + 0.01;
-                    listInputs.add(t);
-                }
-                Matrix3D inputs = new Matrix3D(inputX, inputY, inputZ, listInputs);
-                int target = queryMax(inputs);
-                System.out.println("Correct: " + correct + ", Output: " + target);
-                if(correct == target) ++count_correct;
-            }
-            System.out.println((double)100*count_correct/count + "%");
-            sc.close();
-        } catch(Exception e) {
-            e.printStackTrace();
+    public double test(ExtractedData data, boolean debug) {
+        int countCorrect = 0;
+        for(int i = 0; i < data.getLen(); ++i) {
+            int label = queryMax(data.getInputs().get(i));
+            int correct = data.getOutputs().get(i).getMaxIndex();
+            if(correct == label) ++countCorrect;
+            if(debug) System.out.println("Correct: " + correct + ", Output: " + label);
         }
+        double res = (double)100*countCorrect/data.getLen();
+        if(debug) System.out.println(res + "%");
+        return res;
     }
 
     public void save() {

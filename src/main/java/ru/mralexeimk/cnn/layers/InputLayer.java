@@ -23,10 +23,9 @@ public class InputLayer extends Layer implements Serializable {
     @Override
     public boolean toDefault() {
         if(nextLayer instanceof NeuronsLayer) {
-            data = new Matrix3D(1, getSizeX()*getSizeY()*getSizeD(), 1);
             biases = new ArrayList<>();
             biases.add(0.0);
-            W = new Matrix3D(new Matrix(getSizeY(), nextLayer.getSizeY(),
+            W = new Matrix3D(new Matrix(getSizeX()*getSizeY()*getSizeD(), nextLayer.getSizeY(),
                     -1 / Math.sqrt(nextLayer.getSizeY()),
                        1 / Math.sqrt(nextLayer.getSizeY())
             ));
@@ -49,9 +48,17 @@ public class InputLayer extends Layer implements Serializable {
     }
 
     @Override
+    public Matrix3D getData() {
+        if(nextLayer instanceof NeuronsLayer) {
+            return data.getConvertToLine();
+        }
+        return data;
+    }
+
+    @Override
     public void doStep() {
         if(nextLayer instanceof NeuronsLayer) {
-            nextLayer.setData(activationFun(W.getConvertByMultiply(data).sum(biases)));
+            nextLayer.setData(activationFun(W.getConvertByMultiply(data.getConvertToLine()).sum(biases)));
         }
         else if(nextLayer instanceof FilterLayer) {
             nextLayer.setData(activationFun(data.getConvertByMergeKernel(W, 1).sum(biases)));

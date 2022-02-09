@@ -681,4 +681,28 @@ public class Matrix implements Serializable {
         assign(getMultiply(m));
         return this;
     }
+
+    public int getMaxIndex() {
+        int index = 0;
+        double max = Double.MIN_VALUE;
+        for(int y = 0; y < M; ++y) {
+            if(get(0, y) > max) {
+                max = get(0, y);
+                index = y;
+            }
+        }
+        return index;
+    }
+
+    public int getMinIndex() {
+        int index = 0;
+        double max = Double.MAX_VALUE;
+        for(int y = 0; y < M; ++y) {
+            if(get(0, y) < max) {
+                max = get(0, y);
+                index = y;
+            }
+        }
+        return index;
+    }
 }
