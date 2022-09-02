@@ -1,10 +1,8 @@
 package ru.mralexeimk.cnn.layers;
 
 import ru.mralexeimk.cnn.models.Layer;
-import ru.mralexeimk.cnn.models.Matrix3D;
-import ru.mralexeimk.cnn.other.ActivationFunType;
-import ru.mralexeimk.cnn.other.LayerType;
-import ru.mralexeimk.cnn.other.PullingType;
+import ru.mralexeimk.cnn.enums.LayerType;
+import ru.mralexeimk.cnn.enums.PullingType;
 
 import java.io.Serializable;
 

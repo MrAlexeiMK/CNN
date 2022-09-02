@@ -3,8 +3,8 @@ package ru.mralexeimk.cnn.layers;
 import ru.mralexeimk.cnn.models.Layer;
 import ru.mralexeimk.cnn.models.Matrix;
 import ru.mralexeimk.cnn.models.Matrix3D;
-import ru.mralexeimk.cnn.other.ActivationFunType;
-import ru.mralexeimk.cnn.other.LayerType;
+import ru.mralexeimk.cnn.enums.ActivationFunType;
+import ru.mralexeimk.cnn.enums.LayerType;
 
 import java.io.Serializable;
 import java.util.ArrayList;

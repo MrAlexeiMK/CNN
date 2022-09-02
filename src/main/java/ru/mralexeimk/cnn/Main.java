@@ -2,9 +2,8 @@ package ru.mralexeimk.cnn;
 
 import ru.mralexeimk.cnn.layers.*;
 import ru.mralexeimk.cnn.models.*;
-import ru.mralexeimk.cnn.other.ActivationFunType;
-import ru.mralexeimk.cnn.other.NeuralNetworkParameters;
-import ru.mralexeimk.cnn.other.PullingType;
+import ru.mralexeimk.cnn.enums.ActivationFunType;
+import ru.mralexeimk.cnn.enums.PullingType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +29,10 @@ public class Main {
     }
 
     public static void mnistTest() {
-        NeuralNetwork nn = new NeuralNetwork("mnist", convLayers, 0.05);
+        NeuralNetwork nn = new NeuralNetwork("mnist", layers, 0.01);
         nn.train(DataExtractor.extractFromFile("/train/mnist_train_100.csv", 28, 28, 1, 10),
-                10, true);
+                50, true);
         nn.printData();
-        nn.printWeights();
         nn.test(DataExtractor.extractFromFile("/test/mnist_test.csv", 28, 28, 1, 10), true);
     }
 }

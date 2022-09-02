@@ -1,14 +1,19 @@
 package ru.mralexeimk.cnn.models;
 
+import ru.mralexeimk.cnn.enums.PaddingFill;
+import ru.mralexeimk.cnn.other.Constants;
 import ru.mralexeimk.cnn.other.Pair;
 
 import java.io.Serializable;
 import java.util.*;
 
 public class Matrix implements Serializable {
-    protected double[][] data;
-    protected int N, M;
+    public double[][] data;
+    public int N, M;
 
+    /**
+     * Define matrix by keyboard input
+     */
     public Matrix() {
         try (Scanner sc = new Scanner(System.in)) {
             N = sc.nextInt();
@@ -24,6 +29,12 @@ public class Matrix implements Serializable {
         }
     }
 
+    /**
+     * Define matrix (N,M) with value
+     * @param N Columns
+     * @param M Rows
+     * @param value value
+     */
     public Matrix(int N, int M, double value) {
         this.N = N;
         this.M = M;
@@ -35,10 +46,22 @@ public class Matrix implements Serializable {
         }
     }
 
+    /**
+     * Define zero-matrix (N,M)
+     * @param N Columns
+     * @param M Rows
+     */
     public Matrix(int N, int M) {
         this(N, M, 0);
     }
 
+    /**
+     * Define matrix (N,M) with random values in range [from; to]
+     * @param N Columns
+     * @param M Rows
+     * @param from Random begin
+     * @param to Random end
+     */
     public Matrix(int N, int M, double from, double to) {
         this.N = N;
         this.M = M;
@@ -50,10 +73,17 @@ public class Matrix implements Serializable {
         }
     }
 
+    /**
+     * Define matrix by another matrix
+     * @param m Matrix
+     */
     public Matrix(Matrix m) {
         assign(m);
     }
 
+    /**
+     * Define vector (with matrix implementation) by List of values
+     */
     public Matrix(List<Double> vector) {
         N = 1;
         M = vector.size();
@@ -63,6 +93,12 @@ public class Matrix implements Serializable {
         }
     }
 
+    /**
+     * Define matrix by pattern string
+     * @param pattern Pattern of string
+     * @param separatorRows Rows separator
+     * @param separatorColumns Columns separator
+     */
     public Matrix(String pattern, String separatorRows, String separatorColumns) {
         String[] arr = pattern.split(separatorRows);
         M = arr.length;
@@ -76,10 +112,17 @@ public class Matrix implements Serializable {
         }
     }
 
+    /**
+     * Define matrix by string pattern with '|' separator
+     * @param pattern Pattern of string
+     */
     public Matrix(String pattern) {
         this(pattern, "\\|", ",");
     }
 
+    /**
+     * @return List of matrix values
+     */
     public List<Double> toList() {
         List<Double> res = new ArrayList<>();
         for(int y = 0; y < getM(); ++y) {
@@ -105,14 +148,23 @@ public class Matrix implements Serializable {
         return new Matrix(this);
     }
 
+    /**
+     * @return Count of columns (width)
+     */
     public int getN() {
         return N;
     }
 
+    /**
+     * @return Count of rows (height)
+     */
     public int getM() {
         return M;
     }
 
+    /**
+     * @return Matrix value on (x,y)
+     */
     public double get(int x, int y) {
         return data[y][x];
     }
@@ -121,11 +173,17 @@ public class Matrix implements Serializable {
         data[y][x] = value;
     }
 
+    /**
+     * Check if matrix is vector (count of columns equals 1)
+     */
     public boolean isVector() {
         return N == 1;
     }
 
-    public boolean isTransposeVector() {
+    /**
+     * Check if matrix is transposed vector (count of rows equals 1)
+     */
+    public boolean isTransposedVector() {
         return M == 1;
     }
 
@@ -149,6 +207,10 @@ public class Matrix implements Serializable {
         for(int y = 0; y < M; ++y) data[y][x] = list.get(y);
     }
 
+    /**
+     * A - matrix
+     * @return -A
+     */
     public Matrix getNegative() {
         Matrix res = new Matrix(this);
         for(int x = 0; x < N; ++x) {
@@ -159,7 +221,11 @@ public class Matrix implements Serializable {
         return res;
     }
 
+    /**
+     * Replace matrix values with matrix 'm' starting at (xStart,yStart)
+     */
     public void replace(int xStart, int yStart, Matrix m) {
+        if(xStart+m.getN() > N || yStart+m.getM() > M) throw new RuntimeException("Matrix 'm' is too large");
         for(int x = xStart; x < xStart+m.getN(); ++x) {
             for(int y = yStart; y < yStart+m.getM(); ++y) {
                 set(x, y, m.get(x-xStart, y-yStart));
@@ -171,6 +237,9 @@ public class Matrix implements Serializable {
         return Arrays.stream(data).map(double[]::clone).toArray(double[][]::new);
     }
 
+    /**
+     * Expand matrix on right side and bottom side with zero values
+     */
     public void expand(int addN, int addM) {
         N += addN;
         M += addM;
@@ -188,7 +257,10 @@ public class Matrix implements Serializable {
         }
     }
 
-    public void saveExpand(int kX, int kY) {
+    /**
+     * Increase matrix by (kX,kY) times
+     */
+    public void increase(int kX, int kY) {
         Matrix res = new Matrix(N*kX, M*kY);
         for(int x = 0; x < res.getN(); ++x) {
             for(int y = 0; y < res.getM(); ++y) {
@@ -198,6 +270,9 @@ public class Matrix implements Serializable {
         assign(res);
     }
 
+    /**
+     * Erase last 'removeN' columns and last 'removeM' rows
+     */
     public void erase(int removeN, int removeM) {
         N -= removeN;
         M -= removeM;
@@ -259,6 +334,9 @@ public class Matrix implements Serializable {
         removeColumn(N-1);
     }
 
+    /**
+     * @return SubMatrix of matrix
+     */
     public Matrix getSubMatrix(int xStart, int yStart, int width, int height) {
         Matrix res = new Matrix(width, height);
         for(int x = xStart; x < xStart+width; ++x) {
@@ -269,17 +347,20 @@ public class Matrix implements Serializable {
         return res;
     }
 
-    public void toIdentity() {
-        for (int x = 0; x < N; ++x) {
-            for (int y = 0; y < M; ++y) {
-                if (x != y) {
-                    set(x, y, 0);
-                } else set(x, y, 1);
+    public double getSum() {
+        double res = 0;
+        for(int i = 0; i < N; ++i) {
+            for(int j = 0; j < M; ++j) {
+                res += get(i, j);
             }
         }
+        return res;
     }
 
-    public void setTrack(double value) {
+    /**
+     * Update diagonal elements with value
+     */
+    public void setDiagonal(double value) {
         int size = Math.min(N, M);
         for(int i = 0; i < size; ++i) {
             set(i, i, value);
@@ -298,21 +379,23 @@ public class Matrix implements Serializable {
         setColumn(c2, temp);
     }
 
-    public void transpose() {
-        Matrix res = new Matrix(M, N);
-        for (int x = 0; x < N; ++x) {
-            for (int y = 0; y < M; ++y) {
-                res.set(y, x, get(x, y));
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj.getClass() != this.getClass()) {
+            return false;
+        }
+        Matrix A = (Matrix)obj;
+
+        if(N != A.N || M != A.M) return false;
+        for(int i = 0; i < N; ++i) {
+            for(int j = 0; j < M; ++j) {
+                if(Math.abs(get(i, j) - A.get(i, j)) > Constants.EPS) return false;
             }
         }
-        assign(res);
-    }
-
-
-    public Matrix getTranspose() {
-        Matrix res = new Matrix(this);
-        res.transpose();
-        return res;
+        return true;
     }
 
     public double getAverage() {
@@ -326,6 +409,10 @@ public class Matrix implements Serializable {
         return res;
     }
 
+    /**
+     * Convert matrix to triangular down
+     * @return count of swaps
+     */
     public int toTriangularDown() {
         int swaps = 0;
         int size = Math.min(M, N);
@@ -351,6 +438,10 @@ public class Matrix implements Serializable {
         return swaps;
     }
 
+    /**
+     * Convert matrix to triangular up
+     * @return count of swaps
+     */
     public int toTriangularUp() {
         int swaps = 0;
         int size = Math.min(M, N);
@@ -376,6 +467,9 @@ public class Matrix implements Serializable {
         return swaps;
     }
 
+    /**
+     * @return product of diagonal elements
+     */
     public double getTrack() {
         double ans = get(0, 0);
         for(int i = 1; i < Math.min(N, M); ++i) {
@@ -384,6 +478,9 @@ public class Matrix implements Serializable {
         return ans;
     }
 
+    /**
+     * @return Determinant of matrix
+     */
     public double getDeterminant() {
         Matrix A = new Matrix(this);
         int swaps = A.toTriangularDown();
@@ -419,38 +516,54 @@ public class Matrix implements Serializable {
         }
     }
 
-    public Matrix getInverse() {
-        if(N != M) throw new IndexOutOfBoundsException("Matrix must be square");
-        Matrix E = new Matrix(N, M);
-        E.setTrack(1);
-        Matrix A = new Matrix(this);
-        A.joinRight(E);
-        A.toUnit();
-        for(int i = 0; i < A.getM(); ++i) {
-            if (A.get(i, i) == 0) throw new RuntimeException("Determinant mustn't be 0");
+    /**
+     * Matrix transpose
+     */
+    public Matrix transpose() {
+        Matrix res = new Matrix(M, N);
+        for (int x = 0; x < N; ++x) {
+            for (int y = 0; y < M; ++y) {
+                res.set(y, x, get(x, y));
+            }
         }
-        return A.getSubMatrix(N, 0, N, M);
+        assign(res);
+        return this;
     }
 
-    public Matrix convertByKernel(Matrix K, int step) {
-        if(K.getN() <= getN() && K.getM() <= getM()) {
-            int sizeX = (int)Math.ceil((getN() - K.getN() + 1)/(float)step);
-            int sizeY = (int)Math.ceil((getM() - K.getM() + 1)/(float)step);
-            Matrix res = new Matrix(sizeX, sizeY);
-            for(int y = 0; y < res.getM(); ++y) {
-                for(int x = 0; x < res.getN(); ++x) {
-                    double val = 0;
-                    for(int x1 = x*step; x1 < x*step+K.getN(); ++x1) {
-                        for(int y1 = y*step; y1 < y*step + K.getM(); ++y1) {
-                            val += get(x1, y1)*K.get(x1-x, y1-y);
-                        }
-                    }
-                    res.set(x, y, val);
-                }
+    public Matrix getTransposed() {
+        Matrix res = new Matrix(M, N);
+        for (int x = 0; x < N; ++x) {
+            for (int y = 0; y < M; ++y) {
+                res.set(y, x, get(x, y));
             }
-            assign(res);
         }
+        return res;
+    }
+
+    /**
+     * @return Inverse matrix
+     */
+    public Matrix inverse() {
+        assign(MatrixExtractor.getInverse(this));
         return this;
+    }
+
+    public Matrix getInverse() {
+        return MatrixExtractor.getInverse(this);
+    }
+
+    /**
+     * Resize matrix with saving important information
+     */
+    public Matrix resize(int width, int height) {
+        assign(MatrixExtractor.getResized(this, width, height));
+        return this;
+    }
+
+    public Matrix convertByKernel(Matrix K, int paddingSizeX, int paddingSizeY,
+                                  PaddingFill paddingFill, int stridingSizeX, int stridingSizeY) {
+        return MatrixExtractor.getConvertByKernel(this, K, paddingSizeX, paddingSizeY,
+                paddingFill, stridingSizeX, stridingSizeY);
     }
 
     public Matrix convertByMaxPulling(int size) {
@@ -511,34 +624,23 @@ public class Matrix implements Serializable {
         return this;
     }
 
-    public List<Double> getSquareValues(int size, int index) {
-        List<Double> res = new ArrayList<>();
-        for(Pair<Integer, Integer> pair : getSquare(size, index)) {
-            res.add(get(pair.getFirst(), pair.getSecond()));
-        }
-        return res;
-    }
-
-    public List<Pair<Integer, Integer>> getSquare(int size, int index) {
-        List<Pair<Integer, Integer>> coords = new ArrayList<>();
-        int width = N/size;
-        int x = (index%width) * size;
-        int y = (index/width) * size;
-        for(int x1 = x; x1 < x + size; ++x1) {
-            for(int y1 = y; y1 < y + size; ++y1) {
-                coords.add(new Pair<>(x1, y1));
+    /**
+     * Update matrix value on (xCenter,yCenter) with average of elements in window with K-radius
+     */
+    public void updateByAverageWindow(int xCenter, int yCenter, int K)  {
+        double sum = 0.0;
+        int count = 0;
+        for (int x = Math.max(0, xCenter-K/2); x <= Math.min(M-1, xCenter+K/2); ++x)  {
+            for (int y = Math.max(0, yCenter-K/2); y <= Math.min(N-1, yCenter+K/2); ++y) {
+                double val = get(x, y);
+                if (val > 0) {
+                    sum += val;
+                    ++count;
+                }
             }
         }
-        return coords;
-    }
-
-    public void sumIntoSquare(int size, int index, double error) {
-        int x = (index%N) * size;
-        int y = (index/N) * size;
-        for(int x1 = x; x1 < x + size; ++x1) {
-            for(int y1 = y; y1 < y + size; ++y1) {
-                set(x1, y1, get(x1, y1) + error);
-            }
+        if (count > 0) {
+            set(xCenter, yCenter, sum / count);
         }
     }
 
@@ -561,24 +663,14 @@ public class Matrix implements Serializable {
     }
 
     public String toString() {
-        String res = N+" " + M + "\n";
+        StringBuilder res = new StringBuilder(N + " " + M + "\n");
         for(int y = 0; y < M; ++y) {
             for(int x = 0; x < N; ++x) {
-                res += get(x, y)+" ";
+                res.append(get(x, y)).append(" ");
             }
-            res += "\n";
+            res.append("\n");
         }
-        return res;
-    }
-
-    public Matrix getSum(double val) {
-        Matrix res = new Matrix(N, M);
-        for(int x = 0; x < N; ++x) {
-            for(int y = 0; y < M; ++y) {
-                res.set(x, y, get(x, y) + val);
-            }
-        }
-        return res;
+        return res.toString();
     }
 
     public Matrix sum(double val) {
@@ -590,26 +682,6 @@ public class Matrix implements Serializable {
         return this;
     }
 
-    public double getSum() {
-        double res = 0;
-        for(int x = 0; x < N; ++x) {
-            for(int y = 0; y < M; ++y) {
-                res += get(x, y);
-            }
-        }
-        return res;
-    }
-
-    public Matrix getSum(Matrix m) {
-        Matrix res = new Matrix(N, M);
-        for(int x = 0; x < N; ++x) {
-            for(int y = 0; y < M; ++y) {
-                res.set(x, y, get(x, y) + m.get(x, y));
-            }
-        }
-        return res;
-    }
-
     public Matrix sum(Matrix m) {
         for(int x = 0; x < N; ++x) {
             for(int y = 0; y < M; ++y) {
@@ -618,30 +690,18 @@ public class Matrix implements Serializable {
         }
         return this;
     }
-    public Matrix getMinus(double val) {
-        return getSum(-val);
-    }
 
-    public Matrix getMinus(Matrix m) {
-        return getSum(m.getNegative());
-    }
-
-    public Matrix minus(double val) {
+    public Matrix diff(double val) {
         return sum(-val);
     }
 
-    public Matrix minus(Matrix m) {
-        return sum(m.getNegative());
-    }
-
-    public Matrix getMultiply(double val) {
-        Matrix res = new Matrix(N, M);
+    public Matrix diff(Matrix m) {
         for(int x = 0; x < N; ++x) {
             for(int y = 0; y < M; ++y) {
-                res.set(x, y, get(x, y) * val);
+                set(x, y, get(x, y) - m.get(x, y));
             }
         }
-        return res;
+        return this;
     }
 
     public Matrix multiply(double val) {
@@ -653,7 +713,7 @@ public class Matrix implements Serializable {
         return this;
     }
 
-    public Matrix getMultiply(Matrix m) {
+    public Matrix multiply(Matrix m) {
         if(N == m.getM()) {
             Matrix res = new Matrix(m.getN(), M);
             for (int y = 0; y < M; ++y) {
@@ -663,7 +723,8 @@ public class Matrix implements Serializable {
                     }
                 }
             }
-            return res;
+            assign(res);
+            return this;
         }
         else if(N == m.getN() && M == m.getM()) {
             Matrix res = new Matrix(N, M);
@@ -672,16 +733,15 @@ public class Matrix implements Serializable {
                     res.set(x, y, get(x, y) * m.get(x, y));
                 }
             }
-            return res;
+            assign(res);
+            return this;
         }
-        return null;
+        throw new RuntimeException("Can't multiply matrices");
     }
 
-    public Matrix multiply(Matrix m) {
-        assign(getMultiply(m));
-        return this;
-    }
-
+    /**
+     * @return Index of maximum element on first column
+     */
     public int getMaxIndex() {
         int index = 0;
         double max = Double.MIN_VALUE;
@@ -694,6 +754,9 @@ public class Matrix implements Serializable {
         return index;
     }
 
+    /**
+     * @return Index of minimum element on first column
+     */
     public int getMinIndex() {
         int index = 0;
         double max = Double.MAX_VALUE;

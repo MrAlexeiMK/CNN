@@ -2,10 +2,10 @@ package ru.mralexeimk.cnn.models;
 
 import lombok.Data;
 import ru.mralexeimk.cnn.layers.*;
-import ru.mralexeimk.cnn.other.ActivationFunType;
-import ru.mralexeimk.cnn.other.Direction;
+import ru.mralexeimk.cnn.enums.ActivationFunType;
+import ru.mralexeimk.cnn.enums.Direction;
 import ru.mralexeimk.cnn.other.ExtractedData;
-import ru.mralexeimk.cnn.other.PullingType;
+import ru.mralexeimk.cnn.enums.PullingType;
 
 import java.io.*;
 import java.util.*;
@@ -167,7 +167,7 @@ public class NeuralNetwork implements Serializable {
         setInputLayerData(input);
         evaluate();
         Matrix outputs = getOutputLayerData().clone();
-        Matrix3D errors = new Matrix3D(target.getMinus(outputs));
+        Matrix3D errors = new Matrix3D(target.diff(outputs));
         for(int i = layers.size()-2; i >= 0; --i) {
             Layer layer = layers.get(i);
             Layer next = layer.getNextLayer();
@@ -175,15 +175,14 @@ public class NeuralNetwork implements Serializable {
                 Matrix I = nl.getData().getMatrix();
                 Matrix O = next.getData().getMatrix();
                 Matrix error = errors.getMatrix();
-                Matrix dif = error
-                        .getMultiply(O)
+                Matrix dif = MatrixExtractor.getMultiply(error, O)
                         .multiply(O.getNegative().sum(1))
-                        .multiply(I.getTranspose())
+                        .multiply(I.getTransposed())
                         .multiply(learningRate);
                 double biasError = dif.getSum();
                 nl.setBias(0, nl.getBias(0)+biasError);
                 nl.getW().getMatrix().sum(dif);
-                errors = new Matrix3D(nl.getW().getMatrix().getTranspose().multiply(error));
+                errors = new Matrix3D(nl.getW().getMatrix().getTransposed().multiply(error));
             }
             else if(layer instanceof InputLayer il) {
                 if(next instanceof NeuronsLayer nl) {
@@ -193,7 +192,7 @@ public class NeuralNetwork implements Serializable {
                     Matrix dif = error
                             .multiply(O)
                             .multiply(O.getNegative().sum(1))
-                            .multiply(I.getTranspose())
+                            .multiply(I.getTransposed())
                             .multiply(learningRate);
                     double biasError = dif.getSum();
                     il.setBias(0, nl.getBias(0)+biasError);
@@ -257,12 +256,12 @@ public class NeuralNetwork implements Serializable {
                     errors = nextErrors;
                 }
                 else if(next instanceof NeuronsLayer) {
-                    errors.resize(pl.getSizeX(), pl.getSizeY(), pl.getSizeD());
+                    errors.expandLine(pl.getSizeX(), pl.getSizeY(), pl.getSizeD());
                 }
             }
             else if(layer instanceof FilterLayer fl) {
                 if(next instanceof PullingLayer) {
-                    errors.saveExpand(fl.getDiv(), fl.getDiv());
+                    errors.increase(fl.getDiv(), fl.getDiv());
                 }
             }
         }

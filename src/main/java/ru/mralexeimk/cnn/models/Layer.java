@@ -1,9 +1,8 @@
 package ru.mralexeimk.cnn.models;
 
 import lombok.Data;
-import ru.mralexeimk.cnn.layers.NeuronsLayer;
-import ru.mralexeimk.cnn.other.ActivationFunType;
-import ru.mralexeimk.cnn.other.LayerType;
+import ru.mralexeimk.cnn.enums.ActivationFunType;
+import ru.mralexeimk.cnn.enums.LayerType;
 
 import java.io.Serializable;
 import java.util.ArrayList;

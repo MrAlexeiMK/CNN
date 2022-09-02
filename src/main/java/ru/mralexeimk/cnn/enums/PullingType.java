@@ -1,4 +1,4 @@
-package ru.mralexeimk.cnn.other;
+package ru.mralexeimk.cnn.enums;
 
 import java.io.Serializable;
 

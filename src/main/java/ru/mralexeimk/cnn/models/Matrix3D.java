@@ -1,6 +1,8 @@
 package ru.mralexeimk.cnn.models;
 
-import ru.mralexeimk.cnn.other.Direction;
+import ru.mralexeimk.cnn.enums.Direction;
+import ru.mralexeimk.cnn.enums.PaddingFill;
+import ru.mralexeimk.cnn.enums.PullingType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -10,6 +12,12 @@ public class Matrix3D implements Serializable {
     private List<Matrix> matrices;
     private int N, M, D;
 
+    /**
+     * Define Matrix3D with zero values
+     * @param N Count of columns (width)
+     * @param M Count of rows (height)
+     * @param D Count of matrices (depth)
+     */
     public Matrix3D(int N, int M, int D) {
         this.N = N;
         this.M = M;
@@ -20,6 +28,13 @@ public class Matrix3D implements Serializable {
         }
     }
 
+    /**
+     * Define Matrix3D with passed values
+     * @param N Count of columns (width)
+     * @param M Count of rows (height)
+     * @param D Count of matrices (depth)
+     * @param vector List of values
+     */
     public Matrix3D(int N, int M, int D, List<Double> vector) {
         this(N, M, D);
         int k = 0;
@@ -33,6 +48,11 @@ public class Matrix3D implements Serializable {
         }
     }
 
+    /**
+     * Define Matrix3D like 1D vector
+     * @param vector List of values on vector
+     * @param direction Direction of vector
+     */
     public Matrix3D(List<Double> vector, Direction direction) {
         N = 1;
         M = 1;
@@ -55,6 +75,9 @@ public class Matrix3D implements Serializable {
         }
     }
 
+    /**
+     * Define Matrix3D by passed matrices
+     */
     public Matrix3D(Matrix... ms) {
         N = ms[0].getN();
         M = ms[0].getM();
@@ -70,6 +93,9 @@ public class Matrix3D implements Serializable {
         }
     }
 
+    /**
+     * Define Matrix3D by passed matrices
+     */
     public Matrix3D(List<Matrix> ms) {
         N = ms.get(0).getN();
         M = ms.get(0).getM();
@@ -85,6 +111,9 @@ public class Matrix3D implements Serializable {
         }
     }
 
+    /**
+     * Define Matrix3D by another Matrix3D
+     */
     public Matrix3D(Matrix3D m) {
         assign(m);
     }
@@ -99,6 +128,9 @@ public class Matrix3D implements Serializable {
         }
     }
 
+    /**
+     * redefine N,M,D by internal data
+     */
     public void redefine() {
         N = get(0).getN();
         M = get(0).getM();
@@ -122,18 +154,20 @@ public class Matrix3D implements Serializable {
     }
 
     public boolean isTransposeVector() {
-        return D == 1 && getMatrix().isTransposeVector();
+        return D == 1 && getMatrix().isTransposedVector();
     }
 
-    public Matrix getCloneMatrix() {
-        return get(0).clone();
-    }
-
+    /**
+     * @return Matrix on 1'th depth
+     */
     public Matrix getMatrix() {
         return get(0);
     }
 
-    public Matrix3D resize(int N, int M, int D) {
+    /**
+     * Reshape 1D (M>=1) Matrix3D into (N,M,D)
+     */
+    public Matrix3D expandLine(int N, int M, int D) {
         if(isVector() && this.M == N*M*D) {
             Matrix3D res = new Matrix3D(N, M, D);
             int k = 0;
@@ -150,9 +184,12 @@ public class Matrix3D implements Serializable {
         return this;
     }
 
-    public void saveExpand(int kX, int kY) {
+    /**
+     * Increase matrix by (kX,kY) times for each depth
+     */
+    public void increase(int kX, int kY) {
         for(int z = 0; z < D; ++z) {
-            get(z).saveExpand(kX, kY);
+            get(z).increase(kX, kY);
         }
         redefine();
     }
@@ -161,20 +198,29 @@ public class Matrix3D implements Serializable {
         return new Matrix3D(this);
     }
 
+    /**
+     * @return Count of columns (width)
+     */
     public int getN() {
         return N;
     }
 
+    /**
+     * @return Count of rows (height)
+     */
     public int getM() {
         return M;
     }
 
+    /**
+     * @return Count of matrices (depth)
+     */
     public int getD() {
         return D;
     }
 
-    public Matrix get(int index) {
-        return matrices.get(index);
+    public Matrix get(int d) {
+        return matrices.get(d);
     }
 
     public double get(int x, int y, int d) {
@@ -196,17 +242,32 @@ public class Matrix3D implements Serializable {
         matrices.add(m);
     }
 
-    public Matrix3D padding(int size) {
-        Matrix3D res = new Matrix3D(N+2*size, M+2*size, D);
-        res.replace(size, size, this);
-        assign(res);
-        return this;
-    }
-
     public void replace(int xStart, int yStart, Matrix3D m) {
         for(int i = 0; i < D; ++i) {
             get(i).replace(xStart, yStart, m.get(i));
         }
+    }
+
+    public Matrix3D getConvertToLine() {
+        Matrix3D res = new Matrix3D(1, N*M*D, 1);
+        for(int i = 0; i < D; ++i) {
+            List<Double> list = get(i).toList();
+            for(int j = 0; j < list.size(); ++j) {
+                res.get(0).set(0, i*list.size()+j, list.get(j));
+            }
+        }
+        return res;
+    }
+
+    public Matrix3D getConvertTo3DLine() {
+        Matrix3D res = new Matrix3D(1, 1, N*M*D);
+        for(int i = 0; i < D; ++i) {
+            List<Double> list = get(i).toList();
+            for(int j = 0; j < list.size(); ++j) {
+                res.get(i*list.size()+j).set(0, 0, list.get(j));
+            }
+        }
+        return res;
     }
 
     public Matrix3D convertByMaxPulling(int size) {
@@ -248,76 +309,66 @@ public class Matrix3D implements Serializable {
         return new Matrix3D(this).convertByMinPulling(size);
     }
 
-    public Matrix3D getConvertByMergeKernel(Matrix3D K, int step) {
-        int sizeX = (int)Math.ceil((N - K.getN() + 1)/(float)step);
-        int sizeY = (int)Math.ceil((M - K.getM() + 1)/(float)step);
+    public Matrix3D getConvertByMergeKernel(Matrix3D K) {
+        return getConvertByMergeKernel(K, 0, PaddingFill.BY_MEDIAN, 1);
+    }
+
+    public Matrix3D getConvertByMergeKernel(Matrix3D K, int paddingSize, PaddingFill paddingFill, int stridingSize) {
+        int sizeX = (N - K.getN() + 2*paddingSize)/stridingSize + 1;
+        int sizeY = (M - K.getM() + 2*paddingSize)/stridingSize + 1;
         Matrix3D res = new Matrix3D(sizeX, sizeY, K.getD());
-        for(int i = 0; i < K.getD(); i+=step) {
+        for(int i = 0; i < K.getD(); i+=stridingSize) {
             Matrix m = new Matrix(sizeX, sizeY);
-            for (int j = 0; j < D; j+=step) {
+            for (int j = 0; j < D; j+=stridingSize) {
                 Matrix clone = get(j).clone();
-                m.sum(clone.convertByKernel(K.get(i), step));
+                m.sum(clone.convertByKernel(K.get(i), paddingSize, paddingSize, paddingFill, stridingSize, stridingSize));
             }
             res.set(i, m);
         }
         return res;
     }
 
-    public Matrix3D convertByMergeKernel(Matrix3D K, int step) {
-        assign(getConvertByMergeKernel(K, step));
+    public Matrix3D convertByMergeKernel(Matrix3D K) {
+        return convertByMergeKernel(K, 0, PaddingFill.BY_MEDIAN, 1);
+    }
+
+    public Matrix3D convertByMergeKernel(Matrix3D K, int paddingSize, PaddingFill paddingFill, int stridingSize) {
+        assign(getConvertByMergeKernel(K, paddingSize, paddingFill, stridingSize));
         return this;
     }
 
-    public Matrix3D getConvertByKernel(Matrix3D K, int step) {
-        int sizeX = (int)Math.ceil((N - K.getN() + 1)/(float)step);
-        int sizeY = (int)Math.ceil((M - K.getM() + 1)/(float)step);
+    public Matrix3D getConvertByKernel(Matrix3D K) {
+        return getConvertByKernel(K, 0, PaddingFill.BY_MEDIAN, 1);
+    }
+
+    public Matrix3D getConvertByKernel(Matrix3D K, int paddingSize, PaddingFill paddingFill, int stridingSize) {
+        int sizeX = (N - K.getN() + 2*paddingSize)/stridingSize + 1;
+        int sizeY = (M - K.getM() + 2*paddingSize)/stridingSize + 1;
         Matrix3D res = new Matrix3D(sizeX, sizeY, K.getD());
         int len = K.getD()/D;
         for(int i = 0; i < K.getD(); ++i) {
             Matrix clone = get(i/len).clone();
-            clone.convertByKernel(K.get(i), step);
+            clone.convertByKernel(K.get(i), paddingSize, paddingSize, paddingFill, stridingSize, stridingSize);
             res.set(i, clone);
         }
         return res;
     }
 
-    public Matrix3D convertByKernel(Matrix3D K, int step) {
-        assign(getConvertByKernel(K, step));
+    public Matrix3D convertByKernel(Matrix3D K, int paddingSize, PaddingFill paddingFill, int stridingSize) {
+        assign(getConvertByKernel(K, paddingSize, paddingFill, stridingSize));
         return this;
     }
 
-    public Matrix3D getConvertToLine() {
-        Matrix3D res = new Matrix3D(1, N*M*D, 1);
-        for(int i = 0; i < D; ++i) {
-            List<Double> list = get(i).toList();
-            for(int j = 0; j < list.size(); ++j) {
-                res.get(0).set(0, i*list.size()+j, list.get(j));
-            }
-        }
-        return res;
-    }
-
-    public Matrix3D getConvertTo3DLine() {
-        Matrix3D res = new Matrix3D(1, 1, N*M*D);
-        for(int i = 0; i < D; ++i) {
-            List<Double> list = get(i).toList();
-            for(int j = 0; j < list.size(); ++j) {
-                res.get(i*list.size()+j).set(0, 0, list.get(j));
-            }
-        }
-        return res;
-    }
-
     public Matrix3D getConvertByMultiply(Matrix3D data) {
-        return new Matrix3D(get(0).getMultiply(data.get(0)));
+        return new Matrix3D(MatrixExtractor.getMultiply(get(0), data.get(0)));
     }
 
     public String toString() {
-        String res = "("+N+";"+M+";"+D+")\n";
+        StringBuilder res = new StringBuilder("(" + N + ";" + M + ";" + D + ")\n");
         for(int i = 0; i < D; ++i) {
-            res += get(i);
+            res.append(get(i));
         }
-        return res;
+        return res.toString();
     }
 
     public Matrix3D sum(double x) {

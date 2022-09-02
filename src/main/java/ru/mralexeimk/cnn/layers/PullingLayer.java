@@ -3,9 +3,9 @@ package ru.mralexeimk.cnn.layers;
 import ru.mralexeimk.cnn.models.Layer;
 import ru.mralexeimk.cnn.models.Matrix;
 import ru.mralexeimk.cnn.models.Matrix3D;
-import ru.mralexeimk.cnn.other.ActivationFunType;
-import ru.mralexeimk.cnn.other.LayerType;
-import ru.mralexeimk.cnn.other.PullingType;
+import ru.mralexeimk.cnn.enums.ActivationFunType;
+import ru.mralexeimk.cnn.enums.LayerType;
+import ru.mralexeimk.cnn.enums.PullingType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class PullingLayer extends Layer implements Serializable {
     @Override
     public void doStep() {
         if(nextLayer instanceof FilterLayer) {
-            nextLayer.setData(activationFun(data.getConvertByKernel(W, 1).sum(biases)));
+            nextLayer.setData(activationFun(data.getConvertByKernel(W).sum(biases)));
         }
         else if(nextLayer instanceof NeuronsLayer || nextLayer instanceof OutputLayer) {
             nextLayer.setData(data.getConvertToLine());

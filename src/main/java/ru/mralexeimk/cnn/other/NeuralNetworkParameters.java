@@ -40,8 +40,8 @@ public class NeuralNetworkParameters implements Serializable {
 
     public void printTop(int top) {
         List<Parameters> parameters = getTop(top);
-        for(int i = 0; i < parameters.size(); ++i) {
-            System.out.println(parameters.get(i).toString());
+        for (Parameters parameter : parameters) {
+            System.out.println(parameter.toString());
         }
     }
 }
